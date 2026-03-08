@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Care Plan Generator{% endblock %}</title>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f0f2f5;
+            color: #1a1a2e;
+            line-height: 1.6;
+        }
+        nav {
+            background: #1a1a2e;
+            padding: 0.8rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        nav .brand {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-decoration: none;
+        }
+        nav a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        nav a:hover { color: #fff; }
+        .container {
+            max-width: 960px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+        }
+        h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .subtitle { color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
+        .section-title {
+            font-size: 1.1rem;
+            margin: 1.5rem 0 1rem;
+            color: #374151;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #444;
+            margin-bottom: 0.3rem;
+        }
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+        .form-group .hint { font-size: 0.8rem; color: #888; margin-top: 0.2rem; }
+        .btn {
+            display: inline-block;
+            padding: 0.65rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .btn-primary { background: #2563eb; color: #fff; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
+        .btn-secondary { background: #e5e7eb; color: #374151; }
+        .btn-secondary:hover { background: #d1d5db; }
+        .btn-success { background: #059669; color: #fff; }
+        .btn-success:hover { background: #047857; }
+        .btn-group { display: flex; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background: #f9fafb;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+        }
+        td { font-size: 0.9rem; }
+        tr:hover { background: #f9fafb; }
+        .care-plan-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            padding: 1.5rem;
+            background: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .info-item label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .info-item p { font-size: 0.95rem; margin-top: 0.2rem; }
+        .empty { text-align: center; padding: 3rem; color: #9ca3af; }
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+            nav { padding: 0.8rem 1rem; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="{% url 'form' %}" class="brand">Care Plan Generator</a>
+        <a href="{% url 'form' %}">+ New Order</a>
+        <a href="{% url 'orders' %}">Orders</a>
+    </nav>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

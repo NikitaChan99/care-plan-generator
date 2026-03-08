@@ -1,0 +1,92 @@
+{% extends "core/base.html" %}
+{% block title %}New Care Plan Order{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>New Care Plan Order</h1>
+    <p class="subtitle">Enter patient and medication information to generate a care plan.</p>
+
+    <form method="POST" id="order-form">
+        {% csrf_token %}
+
+        <h2 class="section-title">Patient Information</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="patient_first_name">First Name</label>
+                <input type="text" id="patient_first_name" name="patient_first_name" required>
+            </div>
+            <div class="form-group">
+                <label for="patient_last_name">Last Name</label>
+                <input type="text" id="patient_last_name" name="patient_last_name" required>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="mrn">Patient MRN</label>
+                <input type="text" id="mrn" name="mrn" required>
+                <div class="hint">6-digit unique patient ID</div>
+            </div>
+            <div class="form-group">
+                <label for="primary_diagnosis">Primary Diagnosis (ICD-10)</label>
+                <input type="text" id="primary_diagnosis" name="primary_diagnosis" required
+                       placeholder="e.g. G70.00">
+            </div>
+        </div>
+
+        <h2 class="section-title">Provider Information</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="provider_name">Referring Provider</label>
+                <input type="text" id="provider_name" name="provider_name" required>
+            </div>
+            <div class="form-group">
+                <label for="provider_npi">Provider NPI</label>
+                <input type="text" id="provider_npi" name="provider_npi" required>
+                <div class="hint">10-digit National Provider Identifier</div>
+            </div>
+        </div>
+
+        <h2 class="section-title">Medication & History</h2>
+        <div class="form-group">
+            <label for="medication_name">Medication Name</label>
+            <input type="text" id="medication_name" name="medication_name" required
+                   placeholder="e.g. IVIG">
+        </div>
+
+        <div class="form-group">
+            <label for="additional_diagnoses">Additional Diagnoses (ICD-10)</label>
+            <textarea id="additional_diagnoses" name="additional_diagnoses"
+                      placeholder="One per line, e.g.&#10;I10 - Hypertension&#10;K21.0 - GERD"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="medication_history">Medication History</label>
+            <textarea id="medication_history" name="medication_history"
+                      placeholder="One per line, e.g.&#10;Pyridostigmine 60mg PO q6h PRN&#10;Prednisone 10mg PO daily"></textarea>
+        </div>
+
+        <h2 class="section-title">Patient Records</h2>
+        <div class="form-group">
+            <label for="patient_records">Clinical Notes / Records</label>
+            <textarea id="patient_records" name="patient_records"
+                      style="min-height: 150px;"
+                      placeholder="Paste patient's clinical records, history, and notes here..."></textarea>
+        </div>
+
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary" id="submit-btn">
+                Generate Care Plan
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById("order-form").addEventListener("submit", function () {
+    var btn = document.getElementById("submit-btn");
+    btn.disabled = true;
+    btn.textContent = "Generating care plan\u2026 (may take 10-30s)";
+});
+</script>
+{% endblock %}

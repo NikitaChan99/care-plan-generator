@@ -1,0 +1,47 @@
+{% extends "core/base.html" %}
+{% block title %}All Orders{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h1 style="margin-bottom: 0;">Orders</h1>
+        {% if orders %}
+        <a href="{% url 'export' %}" class="btn btn-secondary">Export CSV</a>
+        {% endif %}
+    </div>
+
+    {% if orders %}
+    <table>
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>MRN</th>
+                <th>Medication</th>
+                <th>Provider</th>
+                <th>Date</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.patient_first_name }} {{ order.patient_last_name }}</td>
+                <td>{{ order.mrn }}</td>
+                <td>{{ order.medication_name }}</td>
+                <td>{{ order.provider_name }}</td>
+                <td>{{ order.created_at|slice:":10" }}</td>
+                <td><a href="{% url 'result' order_id=order.id %}" style="color: #2563eb;">View</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty">
+        <p>No orders yet.</p>
+        <a href="{% url 'form' %}" class="btn btn-primary" style="margin-top: 1rem;">
+            Create First Order
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

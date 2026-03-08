@@ -1,0 +1,45 @@
+{% extends "core/base.html" %}
+{% block title %}Care Plan — {{ order.patient_first_name }} {{ order.patient_last_name }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Care Plan</h1>
+    <div class="info-grid">
+        <div class="info-item">
+            <label>Patient</label>
+            <p>{{ order.patient_first_name }} {{ order.patient_last_name }}</p>
+        </div>
+        <div class="info-item">
+            <label>MRN</label>
+            <p>{{ order.mrn }}</p>
+        </div>
+        <div class="info-item">
+            <label>Medication</label>
+            <p>{{ order.medication_name }}</p>
+        </div>
+        <div class="info-item">
+            <label>Primary Diagnosis</label>
+            <p>{{ order.primary_diagnosis }}</p>
+        </div>
+        <div class="info-item">
+            <label>Provider</label>
+            <p>{{ order.provider_name }} (NPI: {{ order.provider_npi }})</p>
+        </div>
+        <div class="info-item">
+            <label>Generated</label>
+            <p>{{ order.created_at }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="care-plan-content">{{ order.care_plan }}</div>
+    <div class="btn-group">
+        <a href="{% url 'download' order_id=order.id %}" class="btn btn-success">
+            Download as Text File
+        </a>
+        <a href="{% url 'orders' %}" class="btn btn-secondary">View All Orders</a>
+        <a href="{% url 'form' %}" class="btn btn-secondary">+ New Order</a>
+    </div>
+</div>
+{% endblock %}
