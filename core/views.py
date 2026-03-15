@@ -1,18 +1,14 @@
 import csv
 import os
-import uuid
-from datetime import datetime
 
 import anthropic
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 
-# ─── In-memory storage ───────────────────────────────────────────────
-# 所有数据存在这个 dict 里，重启就没了。
-# 这是 MVP 故意的设计：后面会加数据库。
-ORDERS = {}
+from .models import CarePlan, Order, Patient, Provider
 
 # ─── LLM prompt ──────────────────────────────────────────────────────
+
 CARE_PLAN_PROMPT = """You are a clinical pharmacist at a specialty pharmacy. \
 Based on the following patient information, generate a comprehensive care plan.
 
@@ -43,69 +39,82 @@ def form_view(request):
     if request.method == "GET":
         return render(request, "core/form.html")
 
-    order_id = uuid.uuid4().hex[:8]
-    order = {
-        "id": order_id,
-        "patient_first_name": request.POST["patient_first_name"],
-        "patient_last_name": request.POST["patient_last_name"],
-        "provider_name": request.POST["provider_name"],
-        "provider_npi": request.POST["provider_npi"],
-        "mrn": request.POST["mrn"],
-        "primary_diagnosis": request.POST["primary_diagnosis"],
-        "medication_name": request.POST["medication_name"],
-        "additional_diagnoses": request.POST.get("additional_diagnoses", ""),
-        "medication_history": request.POST.get("medication_history", ""),
-        "patient_records": request.POST.get("patient_records", ""),
-        "created_at": datetime.now().isoformat(),
-    }
+    # Get or create provider (keyed by NPI)
+    provider, _ = Provider.objects.get_or_create(
+        npi=request.POST["provider_npi"],
+        defaults={"name": request.POST["provider_name"]},
+    )
 
-    # 同步调 LLM — 用户等 10-30 秒，页面一直转圈
-    # 这就是后面引入消息队列要解决的痛点
-    order["care_plan"] = _generate_care_plan(order)
+    # Get or create patient (keyed by MRN)
+    patient, _ = Patient.objects.get_or_create(
+        mrn=request.POST["mrn"],
+        defaults={
+            "first_name": request.POST["patient_first_name"],
+            "last_name": request.POST["patient_last_name"],
+        },
+    )
 
-    ORDERS[order_id] = order
-    return redirect("result", order_id=order_id)
+    # Create order
+    order = Order.objects.create(
+        patient=patient,
+        provider=provider,
+        medication_name=request.POST["medication_name"],
+        primary_diagnosis=request.POST["primary_diagnosis"],
+        additional_diagnoses=request.POST.get("additional_diagnoses", ""),
+        medication_history=request.POST.get("medication_history", ""),
+        patient_records=request.POST.get("patient_records", ""),
+    )
+
+    # 同步调 LLM — 用户等 10-30 秒
+    content = _generate_care_plan(order)
+    CarePlan.objects.create(order=order, content=content)
+
+    return redirect("result", order_id=order.pk)
 
 
 def result_view(request, order_id):
     """Display generated care plan."""
-    order = ORDERS.get(order_id)
-    if not order:
+    try:
+        order = Order.objects.select_related(
+            "patient", "provider", "care_plan"
+        ).get(pk=order_id)
+    except Order.DoesNotExist:
         return HttpResponse("Order not found", status=404)
     return render(request, "core/result.html", {"order": order})
 
 
 def download_view(request, order_id):
     """Download care plan as a .txt file."""
-    order = ORDERS.get(order_id)
-    if not order:
+    try:
+        order = Order.objects.select_related(
+            "patient", "provider", "care_plan"
+        ).get(pk=order_id)
+    except Order.DoesNotExist:
         return HttpResponse("Order not found", status=404)
 
-    content = (
+    text = (
         f"Care Plan\n"
         f"{'=' * 60}\n"
-        f"Patient: {order['patient_first_name']} {order['patient_last_name']}\n"
-        f"MRN: {order['mrn']}\n"
-        f"Medication: {order['medication_name']}\n"
-        f"Primary Diagnosis: {order['primary_diagnosis']}\n"
-        f"Provider: {order['provider_name']} (NPI: {order['provider_npi']})\n"
-        f"Generated: {order['created_at']}\n"
+        f"Patient: {order.patient.first_name} {order.patient.last_name}\n"
+        f"MRN: {order.patient.mrn}\n"
+        f"Medication: {order.medication_name}\n"
+        f"Primary Diagnosis: {order.primary_diagnosis}\n"
+        f"Provider: {order.provider.name} (NPI: {order.provider.npi})\n"
+        f"Generated: {order.created_at}\n"
         f"{'=' * 60}\n\n"
-        f"{order['care_plan']}\n"
+        f"{order.care_plan.content}\n"
     )
 
-    resp = HttpResponse(content, content_type="text/plain; charset=utf-8")
-    filename = f"care_plan_{order['mrn']}_{order['medication_name']}.txt"
+    resp = HttpResponse(text, content_type="text/plain; charset=utf-8")
+    filename = f"care_plan_{order.patient.mrn}_{order.medication_name}.txt"
     resp["Content-Disposition"] = f'attachment; filename="{filename}"'
     return resp
 
 
 def orders_view(request):
     """List all orders (most recent first)."""
-    sorted_orders = sorted(
-        ORDERS.values(), key=lambda o: o["created_at"], reverse=True
-    )
-    return render(request, "core/orders.html", {"orders": sorted_orders})
+    orders = Order.objects.select_related("patient", "provider").order_by("-created_at")
+    return render(request, "core/orders.html", {"orders": orders})
 
 
 def export_csv(request):
@@ -118,16 +127,16 @@ def export_csv(request):
         "Order ID", "Patient Name", "MRN", "Provider", "NPI",
         "Medication", "Primary Diagnosis", "Created At",
     ])
-    for o in ORDERS.values():
+    for o in Order.objects.select_related("patient", "provider").all():
         writer.writerow([
-            o["id"],
-            f"{o['patient_first_name']} {o['patient_last_name']}",
-            o["mrn"],
-            o["provider_name"],
-            o["provider_npi"],
-            o["medication_name"],
-            o["primary_diagnosis"],
-            o["created_at"],
+            o.pk,
+            f"{o.patient.first_name} {o.patient.last_name}",
+            o.patient.mrn,
+            o.provider.name,
+            o.provider.npi,
+            o.medication_name,
+            o.primary_diagnosis,
+            o.created_at.strftime("%Y-%m-%d %H:%M"),
         ])
 
     return resp
@@ -140,6 +149,17 @@ def _generate_care_plan(order):
     """Call Anthropic Claude to generate a care plan. Returns the text content."""
     client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
+    context = {
+        "patient_first_name": order.patient.first_name,
+        "patient_last_name": order.patient.last_name,
+        "mrn": order.patient.mrn,
+        "primary_diagnosis": order.primary_diagnosis,
+        "medication_name": order.medication_name,
+        "additional_diagnoses": order.additional_diagnoses,
+        "medication_history": order.medication_history,
+        "patient_records": order.patient_records,
+    }
+
     message = client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=4096,
@@ -149,7 +169,7 @@ def _generate_care_plan(order):
             "and clinically accurate."
         ),
         messages=[
-            {"role": "user", "content": CARE_PLAN_PROMPT.format(**order)},
+            {"role": "user", "content": CARE_PLAN_PROMPT.format(**context)},
         ],
         temperature=0.3,
     )

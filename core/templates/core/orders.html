@@ -25,12 +25,12 @@
         <tbody>
             {% for order in orders %}
             <tr>
-                <td>{{ order.patient_first_name }} {{ order.patient_last_name }}</td>
-                <td>{{ order.mrn }}</td>
+                <td>{{ order.patient.first_name }} {{ order.patient.last_name }}</td>
+                <td>{{ order.patient.mrn }}</td>
                 <td>{{ order.medication_name }}</td>
-                <td>{{ order.provider_name }}</td>
-                <td>{{ order.created_at|slice:":10" }}</td>
-                <td><a href="{% url 'result' order_id=order.id %}" style="color: #2563eb;">View</a></td>
+                <td>{{ order.provider.name }}</td>
+                <td>{{ order.created_at|date:"Y-m-d" }}</td>
+                <td><a href="{% url 'result' order_id=order.pk %}" style="color: #2563eb;">View</a></td>
             </tr>
             {% endfor %}
         </tbody>

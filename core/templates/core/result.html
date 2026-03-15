@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% block title %}Care Plan — {{ order.patient_first_name }} {{ order.patient_last_name }}{% endblock %}
+{% block title %}Care Plan — {{ order.patient.first_name }} {{ order.patient.last_name }}{% endblock %}
 
 {% block content %}
 <div class="card">
@@ -7,11 +7,11 @@
     <div class="info-grid">
         <div class="info-item">
             <label>Patient</label>
-            <p>{{ order.patient_first_name }} {{ order.patient_last_name }}</p>
+            <p>{{ order.patient.first_name }} {{ order.patient.last_name }}</p>
         </div>
         <div class="info-item">
             <label>MRN</label>
-            <p>{{ order.mrn }}</p>
+            <p>{{ order.patient.mrn }}</p>
         </div>
         <div class="info-item">
             <label>Medication</label>
@@ -23,19 +23,19 @@
         </div>
         <div class="info-item">
             <label>Provider</label>
-            <p>{{ order.provider_name }} (NPI: {{ order.provider_npi }})</p>
+            <p>{{ order.provider.name }} (NPI: {{ order.provider.npi }})</p>
         </div>
         <div class="info-item">
             <label>Generated</label>
-            <p>{{ order.created_at }}</p>
+            <p>{{ order.created_at|date:"Y-m-d H:i" }}</p>
         </div>
     </div>
 </div>
 
 <div class="card">
-    <div class="care-plan-content">{{ order.care_plan }}</div>
+    <div class="care-plan-content">{{ order.care_plan.content }}</div>
     <div class="btn-group">
-        <a href="{% url 'download' order_id=order.id %}" class="btn btn-success">
+        <a href="{% url 'download' order_id=order.pk %}" class="btn btn-success">
             Download as Text File
         </a>
         <a href="{% url 'orders' %}" class="btn btn-secondary">View All Orders</a>
